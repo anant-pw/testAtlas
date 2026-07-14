@@ -35,7 +35,7 @@ Source selection is a single config switch (`DEFECT_SOURCE` / `TC_SOURCE` / `CI_
 | Category | Implemented & verified against a real account | Implemented & verified end-to-end against mocks | Not built yet |
 |---|---|---|---|
 | Defect/Project tracker | Jira | Azure DevOps, Bugzilla, Mantis, GitHub Issues, Linear | — |
-| Test case management | TestLink | TestRail, qTest, Zephyr Scale, PractiTest, Kiwi TCMS | — |
+| Test case management | TestLink | TestRail, qTest, Zephyr Scale, PractiTest, Kiwi TCMS, Azure DevOps Test Plans | — |
 | CI/automation reports | — | — | Jenkins, GitHub Actions, GitLab CI, Allure, ReportPortal |
 
 **What "verified end-to-end against mocks" actually means** for the 10 non-Jira/TestLink adapters: each one was built against that tool's public API docs, then proven through the *whole* real pipeline — a mock server speaking that tool's documented response shape, a real backend instance routing to the real adapter over real HTTP, and (for at least one defect source + one TC source) the actual dashboard UI rendering the result end to end. That's a meaningfully deeper check than "the function returns the right JSON" — it exercises routing, config loading, and rendering exactly like production would. What it can't catch: a live account behaving differently than its own documentation says. Jira and TestLink went through that step too — it's how a retired Jira endpoint and a couple of real TestLink server bugs got caught — and nothing's substituted for it on the other 10 yet. If you hit a mismatch against your real instance, it's almost always a one-line field-name fix in that adapter, not a sign the approach is broken.
@@ -89,6 +89,7 @@ Open the printed local URL. `CONFIG.USE_MOCK` defaults to `true` in `TestManagem
    | `zephyr_scale` | `ZEPHYR_API_TOKEN`, `ZEPHYR_PROJECT_KEY` |
    | `practitest` | `PRACTITEST_EMAIL`, `PRACTITEST_API_TOKEN`, `PRACTITEST_PROJECT_ID` |
    | `kiwi_tcms` | `KIWI_BASE_URL`, `KIWI_USERNAME`, `KIWI_API_TOKEN` |
+   | `azure_devops_testplans` | Same as `azure_devops` — `AZURE_DEVOPS_ORG`, `AZURE_DEVOPS_PROJECT`, `AZURE_DEVOPS_PAT`. No extra vars needed. |
 
    Optionally also set `BACKEND_API_KEY` (see [Security notes](#security-notes)).
 
@@ -108,7 +109,7 @@ Open the printed local URL. `CONFIG.USE_MOCK` defaults to `true` in `TestManagem
    ```js
    USE_MOCK: false,
    DEFECT_SOURCE: "jira",   // or "azure_devops" | "bugzilla" | "mantis" | "github_issues" | "linear"
-   TC_SOURCE: "testlink",   // or "testrail" | "qtest" | "zephyr_scale" | "practitest" | "kiwi_tcms"
+   TC_SOURCE: "testlink",   // or "testrail" | "qtest" | "zephyr_scale" | "practitest" | "kiwi_tcms" | "azure_devops_testplans"
    API_KEY: "",             // must match BACKEND_API_KEY if you set one
    ```
 
@@ -117,6 +118,17 @@ Open the printed local URL. `CONFIG.USE_MOCK` defaults to `true` in `TestManagem
    ```bash
    npm run dev
    ```
+
+### Using Azure DevOps for both defects and test cases
+
+Azure DevOps Boards (work items) and Azure Test Plans share the same credentials. Set both sources and fill in the `AZURE_DEVOPS_*` block in `.env` once:
+
+```js
+DEFECT_SOURCE: "azure_devops",
+TC_SOURCE:     "azure_devops_testplans",
+```
+
+No extra env vars — `AZURE_DEVOPS_ORG`, `AZURE_DEVOPS_PROJECT`, and `AZURE_DEVOPS_PAT` cover both sides.
 
 ### Sprint data on Kanban-only Jira projects
 
@@ -134,7 +146,7 @@ There's no universal Jira field for "linked TestLink test case." The backend loo
 
 ## Known limitations
 
-- The 10 non-Jira/TestLink adapters are verified end-to-end against mocked APIs, not against a real account on each service (see the [Supported & planned sources](#supported--planned-sources) table) — expect the occasional field-name mismatch against your actual instance.
+- The 10 non-Jira/TestLink adapters (including Azure DevOps Test Plans) are verified end-to-end against mocked APIs, not against a real account on each service (see the [Supported & planned sources](#supported--planned-sources) table) — expect the occasional field-name mismatch against your actual instance.
 - Azure DevOps, GitHub Issues, and Linear adapters default to the public SaaS endpoints but accept a base-URL override (`AZURE_DEVOPS_BASE_URL`, `GITHUB_API_BASE_URL`, `LINEAR_API_BASE_URL`) for Azure DevOps Server / GitHub Enterprise Server — untested against either, since I don't have an instance of either to verify against.
 - Jira issue types beyond `Bug/Story/Task/Improvement/Epic` (e.g. `Feature`, `Request`) collapse into `Task` — extend `ISSUE_TYPE_MAP` in `backend/src/adapters/jiraAdapter.js` if you need them distinct.
 - Several TC sources (TestLink, TestRail, qTest, PractiTest) can't resolve a numeric tester/user id to a display name without extra org-specific setup, so testers may show as `Tester #<id>` / `User <id>` rather than a real name.
