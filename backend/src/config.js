@@ -137,6 +137,13 @@ export function isAzureDevopsConfigured() {
   return bool(c.org) && bool(c.project) && bool(c.pat);
 }
 
+// Azure DevOps Test Plans uses the same org/project/PAT as Azure Boards —
+// no extra credentials needed. A user pointing DEFECT_SOURCE at azure_devops
+// and TC_SOURCE at azure_devops_testplans fills in the same env block once.
+export function isAzureDevopsTestPlansConfigured() {
+  return isAzureDevopsConfigured();
+}
+
 export function isBugzillaConfigured() {
   // apiKey is optional — public instances like bugzilla.mozilla.org allow
   // anonymous read access to public bugs.

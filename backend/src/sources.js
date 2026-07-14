@@ -8,6 +8,7 @@ import {
   config,
   isJiraConfigured,
   isAzureDevopsConfigured,
+  isAzureDevopsTestPlansConfigured,
   isBugzillaConfigured,
   isMantisConfigured,
   isGithubIssuesConfigured,
@@ -31,6 +32,7 @@ import { fetchQTestTestCases } from "./adapters/qtestAdapter.js";
 import { fetchZephyrScaleTestCases } from "./adapters/zephyrScaleAdapter.js";
 import { fetchPractiTestTestCases } from "./adapters/practitestAdapter.js";
 import { fetchKiwiTcmsTestCases } from "./adapters/kiwiTcmsAdapter.js";
+import { fetchAzureDevopsTestPlans } from "./adapters/azureDevopsTestPlansAdapter.js";
 
 export const TICKET_SOURCES = [
   {
@@ -120,5 +122,13 @@ export const TEST_CASE_SOURCES = [
     isConfigured: isKiwiTcmsConfigured,
     fetchData: () => fetchKiwiTcmsTestCases(config.kiwiTcms),
     missingConfigMessage: "Kiwi TCMS is not configured. Set KIWI_BASE_URL, KIWI_USERNAME, and KIWI_API_TOKEN in backend/.env.",
+  },
+  {
+    key: "azure_devops_testplans",
+    resource: "testcases",
+    isConfigured: isAzureDevopsTestPlansConfigured,
+    fetchData: () => fetchAzureDevopsTestPlans(config.azureDevops),
+    // Same credentials as azure_devops (Boards) — no extra env vars needed.
+    missingConfigMessage: "Azure DevOps Test Plans is not configured. Set AZURE_DEVOPS_ORG, AZURE_DEVOPS_PROJECT, and AZURE_DEVOPS_PAT in backend/.env (same as azure_devops).",
   },
 ];

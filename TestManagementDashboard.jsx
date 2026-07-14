@@ -1258,6 +1258,7 @@ const TC_SOURCE_OPTIONS = [
   { value: "zephyr_scale", label: "Zephyr Scale" },
   { value: "practitest", label: "PractiTest" },
   { value: "kiwi_tcms", label: "Kiwi TCMS" },
+  { value: "azure_devops_testplans", label: "Azure DevOps Test Plans" },
 ];
 
 // Same visual shell as SourcePill, but an actual control — switches
