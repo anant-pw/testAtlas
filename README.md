@@ -1,6 +1,8 @@
 # TestAtlas
 
-An enterprise-style test management dashboard that unifies a defect tracker and a test case manager into one view — pass rates, automation coverage, traceability, defect trends, and sprint reporting. It ships wired up to **Jira** + **TestLink**, but it isn't built specifically for them: the dashboard only ever talks to a normalised schema, not to Jira/TestLink directly, so pointing it at a different tool is a matter of writing one new backend adapter, not modifying the dashboard.
+A dashboard that actually answers "Are we shipping quality?"
+
+TestAtlas unifies your defect tracker and test case manager into one live view — pass rates, automation coverage, traceability, tester analytics, defect trends, and sprint reporting. It works with **Jira + TestLink** out of the box, but isn't built specifically for them: the dashboard only ever reads a normalised schema, so pointing it at a different tool means writing one adapter file, not modifying the dashboard.
 
 ![status](https://img.shields.io/badge/status-active-brightgreen) ![license](https://img.shields.io/badge/license-MIT-blue)
 
@@ -10,6 +12,7 @@ An enterprise-style test management dashboard that unifies a defect tracker and 
 - **Test Execution** — suite health table, per-suite/sprint execution breakdown, daily execution trend
 - **Automation** — coverage by suite/ticket type, coverage trend, manual-test automation backlog
 - **Traceability** — ticket ↔ test case matrix with coverage gaps surfaced
+- **Testers** — per-tester pass%, assigned TCs, fails, blocks, linked defects, and Critical/High count — filterable by sprint and suite
 - **Defects** — bug trends by priority/status, open-vs-closed trend, linked test case status
 - **Reports** — sprint summary, top failures/critical bugs, most improved/regressed suites, CSV/PDF export hooks
 
@@ -38,7 +41,7 @@ Source selection is a single config switch (`DEFECT_SOURCE` / `TC_SOURCE` / `CI_
 | Test case management | TestLink | TestRail, qTest, Zephyr Scale, PractiTest, Kiwi TCMS, Azure DevOps Test Plans | — |
 | CI/automation reports | — | — | Jenkins, GitHub Actions, GitLab CI, Allure, ReportPortal |
 
-**What "verified end-to-end against mocks" actually means** for the 10 non-Jira/TestLink adapters: each one was built against that tool's public API docs, then proven through the *whole* real pipeline — a mock server speaking that tool's documented response shape, a real backend instance routing to the real adapter over real HTTP, and (for at least one defect source + one TC source) the actual dashboard UI rendering the result end to end. That's a meaningfully deeper check than "the function returns the right JSON" — it exercises routing, config loading, and rendering exactly like production would. What it can't catch: a live account behaving differently than its own documentation says. Jira and TestLink went through that step too — it's how a retired Jira endpoint and a couple of real TestLink server bugs got caught — and nothing's substituted for it on the other 10 yet. If you hit a mismatch against your real instance, it's almost always a one-line field-name fix in that adapter, not a sign the approach is broken.
+**What "verified end-to-end against mocks" means:** each adapter was built against the tool's public API docs and tested through the full real pipeline — mock server, real backend, real HTTP routing, real dashboard rendering. What it can't catch is a live account behaving differently from its own documentation. Jira and TestLink went through that live-account step; the other 11 haven't yet.
 
 CI sources have no backend route or adapter yet, and no dashboard page reads `CI_SOURCE` — that slot in the architecture is reserved but unbuilt.
 
@@ -108,8 +111,8 @@ Open the printed local URL. `CONFIG.USE_MOCK` defaults to `true` in `TestManagem
    In `TestManagementDashboard.jsx`, set:
    ```js
    USE_MOCK: false,
-   DEFECT_SOURCE: "jira",   // or "azure_devops" | "bugzilla" | "mantis" | "github_issues" | "linear"
-   TC_SOURCE: "testlink",   // or "testrail" | "qtest" | "zephyr_scale" | "practitest" | "kiwi_tcms" | "azure_devops_testplans"
+   DEFECT_SOURCE: "jira",   // "azure_devops" | "bugzilla" | "mantis" | "github_issues" | "linear"
+   TC_SOURCE: "testlink",   // "testrail" | "qtest" | "zephyr_scale" | "practitest" | "kiwi_tcms" | "azure_devops_testplans"
    API_KEY: "",             // must match BACKEND_API_KEY if you set one
    ```
 
@@ -146,7 +149,7 @@ There's no universal Jira field for "linked TestLink test case." The backend loo
 
 ## Known limitations
 
-- The 10 non-Jira/TestLink adapters (including Azure DevOps Test Plans) are verified end-to-end against mocked APIs, not against a real account on each service (see the [Supported & planned sources](#supported--planned-sources) table) — expect the occasional field-name mismatch against your actual instance.
+- The 11 non-Jira/TestLink adapters (including Azure DevOps Test Plans) are verified end-to-end against mocked APIs, not against a real account on each service (see the [Supported & planned sources](#supported--planned-sources) table) — expect the occasional field-name mismatch against your actual instance.
 - Azure DevOps, GitHub Issues, and Linear adapters default to the public SaaS endpoints but accept a base-URL override (`AZURE_DEVOPS_BASE_URL`, `GITHUB_API_BASE_URL`, `LINEAR_API_BASE_URL`) for Azure DevOps Server / GitHub Enterprise Server — untested against either, since I don't have an instance of either to verify against.
 - Jira issue types beyond `Bug/Story/Task/Improvement/Epic` (e.g. `Feature`, `Request`) collapse into `Task` — extend `ISSUE_TYPE_MAP` in `backend/src/adapters/jiraAdapter.js` if you need them distinct.
 - Several TC sources (TestLink, TestRail, qTest, PractiTest) can't resolve a numeric tester/user id to a display name without extra org-specific setup, so testers may show as `Tester #<id>` / `User <id>` rather than a real name.
