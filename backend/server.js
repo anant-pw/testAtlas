@@ -27,5 +27,5 @@ for (const source of [...TICKET_SOURCES, ...TEST_CASE_SOURCES]) {
 app.listen(config.port, () => {
   console.log(`Test Management Dashboard backend listening on http://localhost:${config.port}`);
   console.log("Defect sources:    /api/jira | /api/azure_devops | /api/bugzilla | /api/mantis | /api/github_issues | /api/linear");
-  console.log("TC sources:        /api/testlink | /api/testrail | /api/qtest | /api/zephyr_scale | /api/practitest | /api/kiwi_tcms");
+  console.log("TC sources: /api/testlink | /api/testrail | /api/qtest | /api/zephyr_scale | /api/practitest | /api/kiwi_tcms | /api/azure_devops_testplans");
 });
