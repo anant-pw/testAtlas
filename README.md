@@ -56,12 +56,24 @@ Contributions adding or hardening an adapter are welcome — see any file in `ba
 
 ## Quick start (mock data, no backend needed)
 
+Install the frontend dependencies from the repository root, then start the Vite app:
+
 ```bash
 npm install
 npm run dev
 ```
 
 Open the printed local URL. `CONFIG.USE_MOCK` defaults to `true` in `TestManagementDashboard.jsx`, so this works with zero configuration.
+> Note: the frontend and backend are separate apps. If you want to run the real backend too, install dependencies in both places:
+>
+> ```bash
+> npm install
+> cd backend
+> npm install
+> ```
+>
+> Start the backend from the `backend/` folder with `npm start`, and start the frontend from the repository root with `npm run dev`.
+
 
 ## Running against a real defect tracker / test case manager
 
