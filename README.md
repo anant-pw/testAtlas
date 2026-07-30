@@ -1,60 +1,88 @@
-# TestAtlas
+# TestAtlas – Test & Defect Management Dashboard
 
-A dashboard that actually answers "Are we shipping quality?"
+A dashboard that actually answers: **“Are we shipping quality?”**
 
-TestAtlas unifies your defect tracker and test case manager into one live view — pass rates, automation coverage, traceability, tester analytics, defect trends, and sprint reporting. It works with **Jira + TestLink** out of the box, but isn't built specifically for them: the dashboard only ever reads a normalised schema, so pointing it at a different tool means writing one adapter file, not modifying the dashboard.
+TestAtlas unifies your **test case management** and **defect/bug tracking** into one live QA view — with pass rates, automation coverage, traceability, tester analytics, defect trends, and sprint reporting.
+
+It works with **Jira + TestLink** out of the box, but it is not limited to them. The dashboard reads from a **normalised schema**, so connecting a different test management or defect tracker usually means writing one adapter file, not changing the dashboard itself.
 
 ![status](https://img.shields.io/badge/status-active-brightgreen) ![license](https://img.shields.io/badge/license-MIT-blue)
 
+## What TestAtlas helps you track
+
+- **QA progress dashboard** with KPI cards and trend charts.
+- **Test execution health** across suites, sprints, and daily runs.
+- **Automation coverage** by suite and ticket type.
+- **Traceability** between tickets and test cases.
+- **Tester performance** with assigned test cases, pass rate, failures, blocks, and linked defects.
+- **Defect trends** by priority, status, and open vs closed volume.
+- **Sprint reporting** with top failures, critical bugs, and regressions.
+
+If you need a **test management dashboard**, **bug tracker dashboard**, or a unified **QA progress view**, TestAtlas is built for that use case.
+
 ## Features
 
-- **Overview** — KPI cards, pass/fail/automation trend charts, attention-required callouts (suites below 60% pass rate, uncovered ticket types, failing automated tests)
-- **Test Execution** — suite health table, per-suite/sprint execution breakdown, daily execution trend
-- **Automation** — coverage by suite/ticket type, coverage trend, manual-test automation backlog
-- **Traceability** — ticket ↔ test case matrix with coverage gaps surfaced
-- **Testers** — per-tester pass%, assigned TCs, fails, blocks, linked defects, and Critical/High count — filterable by sprint and suite
-- **Defects** — bug trends by priority/status, open-vs-closed trend, linked test case status
-- **Reports** — sprint summary, top failures/critical bugs, most improved/regressed suites, CSV/PDF export hooks
+- **Overview** — KPI cards, pass/fail/automation trend charts, and attention-required callouts.
+- **Test Execution** — suite health table, per-suite and per-sprint execution breakdown, daily execution trends.
+- **Automation** — coverage by suite and ticket type, coverage trends, manual-test automation backlog.
+- **Traceability** — ticket ↔ test case matrix with coverage gaps highlighted.
+- **Testers** — per-tester pass percentage, assigned test cases, failures, blocks, linked defects, and critical/high issues.
+- **Defects** — bug trends by priority and status, open-vs-closed trend, linked test case status.
+- **Reports** — sprint summary, top failures, critical bugs, most improved/regressed suites, CSV/PDF export hooks.
 
 Works immediately with generated mock data (`CONFIG.USE_MOCK = true`), or against your real Jira + TestLink instances once the backend is configured.
 
+## Why TestAtlas is different
+
+Most tools focus only on either:
+- test case management, or
+- issue/bug tracking.
+
+TestAtlas is designed to show both in one place, so QA teams can quickly answer:
+- What is tested?
+- What is failing?
+- Which bugs are blocking release?
+- How much automation coverage do we have?
+- Which suites or testers need attention?
+
 ## Architecture
 
-```
-TestManagementDashboard.jsx   single-file React app (dashboard, charts, mock data, DataService)
+```text
+TestManagementDashboard.jsx   Single-file React app with dashboard, charts, mock data, and data service
 src/main.jsx, index.html      Vite entry point for running the dashboard
 backend/                      Express API that adapts each source into one normalised schema
-  src/adapters/*.js                One file per source → Normalised Ticket/TestCase Schema
-  src/routes/*.js                   One route per source, mounted under /api/<source>/...
-  server.js                        Express app, CORS, optional shared-secret auth
+  src/adapters/*.js           One file per source → normalised Ticket / TestCase schema
+  src/routes/*.js             One route per source, mounted under /api/<source>/...
+  server.js                   Express app, CORS, optional shared-secret auth
 ```
 
-The dashboard never talks to any defect tracker or test case manager directly — it only calls the backend, and the backend holds all credentials server-side. Only the adapter matching your configured `DEFECT_SOURCE`/`TC_SOURCE` is ever actually called; the others sit idle and report "not configured" if hit directly.
+The dashboard never talks to any defect tracker or test case manager directly. It only calls the backend, and the backend keeps credentials server-side.
 
-## Supported & planned sources
+## Supported sources
 
-Source selection is a single config switch (`DEFECT_SOURCE` / `TC_SOURCE` / `CI_SOURCE` in `TestManagementDashboard.jsx`), and every adapter's only job is mapping its tool's API response onto the same **Normalised Ticket / TestCase / CI Run Schema** documented at the top of that file — that contract is what every page, chart, and filter actually reads from. Add a new source by writing one adapter that fills that contract; nothing else in the app needs to change.
+Source selection is controlled by config in `TestManagementDashboard.jsx`:
+
+- `DEFECT_SOURCE`
+- `TC_SOURCE`
+- `CI_SOURCE`
+
+Each adapter maps its tool’s API response onto the same **normalised Ticket / TestCase / CI Run schema**. Add a new source by writing one adapter that fills that contract; the rest of the app does not need to change.
 
 | Category | Implemented & verified against a real account | Implemented & verified end-to-end against mocks | Not built yet |
 |---|---|---|---|
-| Defect/Project tracker | Jira | Azure DevOps, Bugzilla, Mantis, GitHub Issues, Linear | — |
+| Defect / project tracker | Jira | Azure DevOps, Bugzilla, Mantis, GitHub Issues, Linear | — |
 | Test case management | TestLink | TestRail, qTest, Zephyr Scale, PractiTest, Kiwi TCMS, Azure DevOps Test Plans | — |
-| CI/automation reports | — | — | Jenkins, GitHub Actions, GitLab CI, Allure, ReportPortal |
+| CI / automation reports | — | — | Jenkins, GitHub Actions, GitLab CI, Allure, ReportPortal |
 
-**What "verified end-to-end against mocks" means:** each adapter was built against the tool's public API docs and tested through the full real pipeline — mock server, real backend, real HTTP routing, real dashboard rendering. What it can't catch is a live account behaving differently from its own documentation. Jira and TestLink went through that live-account step; the other 11 haven't yet.
+**What “verified end-to-end against mocks” means:** each adapter was built against the tool’s public API docs and tested through the full pipeline — mock server, backend, HTTP routing, and dashboard rendering. Jira and TestLink also went through live-account verification.
 
-CI sources have no backend route or adapter yet, and no dashboard page reads `CI_SOURCE` — that slot in the architecture is reserved but unbuilt.
+CI sources currently have no backend route or adapter yet, and no dashboard page reads `CI_SOURCE`.
 
-Contributions adding or hardening an adapter are welcome — see any file in `backend/src/adapters/` for the pattern to follow.
+Contributions adding or hardening an adapter are welcome. See any file in `backend/src/adapters/` for the pattern to follow.
 
-## Prerequisites
+## Quick start
 
-- Node.js 18+
-- A Jira Cloud (or Server/Data Center) instance, if you want real defect data
-- A TestLink instance, if you want real test case data
-- Both are optional — the dashboard runs entirely on mock data out of the box
-
-## Quick start (mock data, no backend needed)
+### Mock data, no backend needed
 
 Install the frontend dependencies from the repository root, then start the Vite app:
 
@@ -64,114 +92,110 @@ npm run dev
 ```
 
 Open the printed local URL. `CONFIG.USE_MOCK` defaults to `true` in `TestManagementDashboard.jsx`, so this works with zero configuration.
-> Note: the frontend and backend are separate apps. If you want to run the real backend too, install dependencies in both places:
->
-> ```bash
-> npm install
-> cd backend
-> npm install
-> ```
->
-> Start the backend from the `backend/` folder with `npm start`, and start the frontend from the repository root with `npm run dev`.
 
+### Real backend setup
 
-## Running against a real defect tracker / test case manager
+If you want to connect Jira, TestLink, or another supported source:
 
-1. **Configure the backend**
+```bash
+npm install
+cd backend
+npm install
+cp .env.example .env
+```
 
-   ```bash
-   cd backend
-   npm install
-   cp .env.example .env
-   ```
+Then start the backend from the `backend/` folder:
 
-   `.env.example` has a section per source — fill in only the ones matching what you set `DEFECT_SOURCE`/`TC_SOURCE` to:
+```bash
+npm start
+```
 
-   | `DEFECT_SOURCE` | Required env vars |
-   |---|---|
-   | `jira` | `JIRA_BASE_URL`, `JIRA_JQL`, + (`JIRA_EMAIL`+`JIRA_API_TOKEN` or `JIRA_PERSONAL_ACCESS_TOKEN`) |
-   | `azure_devops` | `AZURE_DEVOPS_ORG`, `AZURE_DEVOPS_PROJECT`, `AZURE_DEVOPS_PAT` |
-   | `bugzilla` | `BUGZILLA_BASE_URL`, `BUGZILLA_API_KEY` |
-   | `mantis` | `MANTIS_BASE_URL`, `MANTIS_API_TOKEN`, `MANTIS_PROJECT_ID` |
-   | `github_issues` | `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_TOKEN` |
-   | `linear` | `LINEAR_API_KEY`, `LINEAR_TEAM_KEY` |
+Start the frontend from the repository root:
 
-   | `TC_SOURCE` | Required env vars |
-   |---|---|
-   | `testlink` | `TESTLINK_BASE_URL`, `TESTLINK_DEV_KEY` |
-   | `testrail` | `TESTRAIL_BASE_URL`, `TESTRAIL_EMAIL`, `TESTRAIL_API_KEY`, `TESTRAIL_PROJECT_ID` |
-   | `qtest` | `QTEST_BASE_URL`, `QTEST_BEARER_TOKEN`, `QTEST_PROJECT_ID` |
-   | `zephyr_scale` | `ZEPHYR_API_TOKEN`, `ZEPHYR_PROJECT_KEY` |
-   | `practitest` | `PRACTITEST_EMAIL`, `PRACTITEST_API_TOKEN`, `PRACTITEST_PROJECT_ID` |
-   | `kiwi_tcms` | `KIWI_BASE_URL`, `KIWI_USERNAME`, `KIWI_API_TOKEN` |
-   | `azure_devops_testplans` | Same as `azure_devops` — `AZURE_DEVOPS_ORG`, `AZURE_DEVOPS_PROJECT`, `AZURE_DEVOPS_PAT`. No extra vars needed. |
+```bash
+npm run dev
+```
 
-   Optionally also set `BACKEND_API_KEY` (see [Security notes](#security-notes)).
+## Configure real sources
 
-2. **Start the backend**
+Fill only the env vars relevant to the sources you enable.
 
-   ```bash
-   npm start
-   # or, for crash-resilient supervision:
-   npm run pm2:start
-   ```
+### Defect / project tracker
 
-   It listens on `http://localhost:8001` by default (`PORT` in `.env`), with one route mounted per source (e.g. `/api/jira/tickets`, `/api/testrail/testcases`) regardless of which one is actually active.
+| `DEFECT_SOURCE` | Required env vars |
+|---|---|
+| `jira` | `JIRA_BASE_URL`, `JIRA_JQL`, plus (`JIRA_EMAIL` + `JIRA_API_TOKEN`) or `JIRA_PERSONAL_ACCESS_TOKEN` |
+| `azure_devops` | `AZURE_DEVOPS_ORG`, `AZURE_DEVOPS_PROJECT`, `AZURE_DEVOPS_PAT` |
+| `bugzilla` | `BUGZILLA_BASE_URL`, `BUGZILLA_API_KEY` |
+| `mantis` | `MANTIS_BASE_URL`, `MANTIS_API_TOKEN`, `MANTIS_PROJECT_ID` |
+| `github_issues` | `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_TOKEN` |
+| `linear` | `LINEAR_API_KEY`, `LINEAR_TEAM_KEY` |
 
-3. **Point the dashboard at it**
+### Test case management
 
-   In `TestManagementDashboard.jsx`, set:
-   ```js
-   USE_MOCK: false,
-   DEFECT_SOURCE: "jira",   // "azure_devops" | "bugzilla" | "mantis" | "github_issues" | "linear"
-   TC_SOURCE: "testlink",   // "testrail" | "qtest" | "zephyr_scale" | "practitest" | "kiwi_tcms" | "azure_devops_testplans"
-   API_KEY: "",             // must match BACKEND_API_KEY if you set one
-   ```
+| `TC_SOURCE` | Required env vars |
+|---|---|
+| `testlink` | `TESTLINK_BASE_URL`, `TESTLINK_DEV_KEY` |
+| `testrail` | `TESTRAIL_BASE_URL`, `TESTRAIL_EMAIL`, `TESTRAIL_API_KEY`, `TESTRAIL_PROJECT_ID` |
+| `qtest` | `QTEST_BASE_URL`, `QTEST_BEARER_TOKEN`, `QTEST_PROJECT_ID` |
+| `zephyr_scale` | `ZEPHYR_API_TOKEN`, `ZEPHYR_PROJECT_KEY` |
+| `practitest` | `PRACTITEST_EMAIL`, `PRACTITEST_API_TOKEN`, `PRACTITEST_PROJECT_ID` |
+| `kiwi_tcms` | `KIWI_BASE_URL`, `KIWI_USERNAME`, `KIWI_API_TOKEN` |
+| `azure_devops_testplans` | `AZURE_DEVOPS_ORG`, `AZURE_DEVOPS_PROJECT`, `AZURE_DEVOPS_PAT` |
 
-4. **Run the dashboard**
+### Optional security
 
-   ```bash
-   npm run dev
-   ```
+Set `BACKEND_API_KEY` if you want a shared-secret check between frontend and backend.
 
-### Using Azure DevOps for both defects and test cases
+## Azure DevOps note
 
-Azure DevOps Boards (work items) and Azure Test Plans share the same credentials. Set both sources and fill in the `AZURE_DEVOPS_*` block in `.env` once:
+Azure DevOps Boards and Azure Test Plans share the same credentials. If you want to use both:
 
 ```js
 DEFECT_SOURCE: "azure_devops",
-TC_SOURCE:     "azure_devops_testplans",
+TC_SOURCE: "azure_devops_testplans",
 ```
 
-No extra env vars — `AZURE_DEVOPS_ORG`, `AZURE_DEVOPS_PROJECT`, and `AZURE_DEVOPS_PAT` cover both sides.
+No extra env vars are needed beyond the `AZURE_DEVOPS_*` values.
 
-### Sprint data on Kanban-only Jira projects
+## Linking tickets to test cases
 
-Jira's native Sprint field requires a Scrum board. If your project is Kanban-only (no Sprints feature), the backend falls back to reading sprint membership from a `sprint-1` / `sprint-2` / `sprint-3` label on each ticket — add those labels to get sprint-based charts and deltas working without a Scrum board.
+There is no universal Jira field for “linked TestLink test case.” The backend looks for test case IDs like `TC-001` or `WSF-4` in:
 
-### Linking tickets to test cases
+- Jira labels,
+- and an optional custom field (`JIRA_TC_LINK_FIELD`).
 
-There's no universal Jira field for "linked TestLink test case." The backend looks for TC ids (e.g. `TC-001`, `WSF-4`) in Jira labels and in an optional configured custom field (`JIRA_TC_LINK_FIELD`). Add the test case id as a label on the Jira ticket to link them.
+Add the test case ID as a label on the Jira ticket to link them.
+
+## Prerequisites
+
+- Node.js 18+
+- A Jira Cloud or Jira Server/Data Center instance, if you want real defect data
+- A TestLink instance, if you want real test case data
+
+Both tools are optional — the dashboard runs entirely on mock data out of the box.
 
 ## Security notes
 
-- Credentials (`JIRA_API_TOKEN`, `TESTLINK_DEV_KEY`, etc.) live **only** in `backend/.env`, which is gitignored. Never put real credentials in `TestManagementDashboard.jsx` — it runs in the browser.
-- `BACKEND_API_KEY` is an optional shared-secret header check between the dashboard and backend. It ships to the browser (visible via dev tools), so it's a defense-in-depth measure for an internal/VPN-perimeter deployment — **not** a substitute for real authentication if you expose this publicly.
-- There is no rate limiting, request auth beyond the optional shared secret, or HTTPS termination built in. Put this behind your own reverse proxy / auth layer before exposing it outside a trusted network.
+- Credentials such as `JIRA_API_TOKEN` and `TESTLINK_DEV_KEY` live only in `backend/.env`, which is gitignored.
+- Never put real credentials in `TestManagementDashboard.jsx`; it runs in the browser.
+- `BACKEND_API_KEY` is only a lightweight internal shared secret. It is **not** a substitute for real authentication if you expose this publicly.
+- There is no built-in HTTPS termination or request rate limiting. Put this behind your own reverse proxy or auth layer before exposing it outside a trusted network.
 
 ## Known limitations
 
-- The 11 non-Jira/TestLink adapters (including Azure DevOps Test Plans) are verified end-to-end against mocked APIs, not against a real account on each service (see the [Supported & planned sources](#supported--planned-sources) table) — expect the occasional field-name mismatch against your actual instance.
-- Azure DevOps, GitHub Issues, and Linear adapters default to the public SaaS endpoints but accept a base-URL override (`AZURE_DEVOPS_BASE_URL`, `GITHUB_API_BASE_URL`, `LINEAR_API_BASE_URL`) for Azure DevOps Server / GitHub Enterprise Server — untested against either, since I don't have an instance of either to verify against.
-- Jira issue types beyond `Bug/Story/Task/Improvement/Epic` (e.g. `Feature`, `Request`) collapse into `Task` — extend `ISSUE_TYPE_MAP` in `backend/src/adapters/jiraAdapter.js` if you need them distinct.
-- Several TC sources (TestLink, TestRail, qTest, PractiTest) can't resolve a numeric tester/user id to a display name without extra org-specific setup, so testers may show as `Tester #<id>` / `User <id>` rather than a real name.
-- "Suite" and "automation flag" aren't standardized concepts in most of these tools — several adapters infer them from labels/tags/custom fields rather than a dedicated field. Check each adapter's header comment for exactly what it assumes.
-- Field mapping (priority, status, issue type) is keyword/heuristic-based and may need tuning for workflows that don't use common naming.
-- No CI pipeline yet. A frontend smoke suite (Vitest) covers data loading, filter behaviour, and the header — run with `npm test`.
+- Non-Jira/TestLink adapters are verified against mocked APIs, not live accounts for every service.
+- Azure DevOps, GitHub Issues, and Linear adapters default to public SaaS endpoints but can accept a base URL override for server/enterprise versions.
+- Jira issue types beyond common ones such as Bug, Story, Task, Improvement, and Epic may collapse into Task.
+- Some test case systems may show tester names as IDs if the source API does not provide enough user metadata.
+- Suite and automation flags may be inferred from labels, tags, or custom fields depending on the source.
+- Field mapping for priority, status, and issue type may need tuning for custom workflows.
+- No CI pipeline yet. A frontend smoke suite covers data loading, filter behavior, and the header — run with `npm test`.
 
 ## Tech stack
 
-React, Recharts, Lucide icons, Tailwind (via CDN in `index.html`), Vite — frontend. Express, `xmlrpc`, `dotenv` — backend.
+- **Frontend:** React, Recharts, Lucide icons, Tailwind via CDN, Vite
+- **Backend:** Express, `xmlrpc`, `dotenv`
 
 ## License
 
