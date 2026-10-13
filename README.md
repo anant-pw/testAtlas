@@ -28,7 +28,7 @@ If you need a **test management dashboard**, **bug tracker dashboard**, or a uni
 - **Traceability** — ticket ↔ test case matrix with coverage gaps highlighted.
 - **Testers** — per-tester pass percentage, assigned test cases, failures, blocks, linked defects, and critical/high issues.
 - **Defects** — bug trends by priority and status, open-vs-closed trend, linked test case status.
-- **Reports** — sprint summary, top failures, critical bugs, most improved/regressed suites, CSV/PDF export hooks.
+- **Reports** — sprint summary, top failures, critical bugs, most improved/regressed suites, and export buttons that are placeholders (export is not implemented yet).
 
 Works immediately with generated mock data (`CONFIG.USE_MOCK = true`), or against your real Jira + TestLink instances once the backend is configured.
 
@@ -52,7 +52,11 @@ TestManagementDashboard.jsx   Single-file React app with dashboard, charts, mock
 src/main.jsx, index.html      Vite entry point for running the dashboard
 backend/                      Express API that adapts each source into one normalised schema
   src/adapters/*.js           One file per source → normalised Ticket / TestCase schema
-  src/routes/*.js             One route per source, mounted under /api/<source>/...
+  src/sources.js              Registry of every source: its adapter, config check, and route name
+  src/routes/createSourceRouter.js  One shared route factory, mounted under /api/<source>/...
+  tests/*.test.js             Adapter contract tests (stubbed upstream APIs, no credentials)
+src/metrics.js                Pure data logic: link reconciliation, filters, every KPI and chart calculation
+tests/                        Frontend tests: dashboard smoke tests and unit tests for src/metrics.js
   server.js                   Express app, CORS, optional shared-secret auth
 ```
 
@@ -71,10 +75,12 @@ Each adapter maps its tool’s API response onto the same **normalised Ticket / 
 | Category | Implemented & verified against a real account | Implemented & verified end-to-end against mocks | Not built yet |
 |---|---|---|---|
 | Defect / project tracker | Jira | Azure DevOps, Bugzilla, Mantis, GitHub Issues, Linear | — |
-| Test case management | TestLink | TestRail, qTest, Zephyr Scale, PractiTest, Kiwi TCMS, Azure DevOps Test Plans | — |
+| Test case management | TestLink, Kiwi TCMS (local Docker instance) | TestRail, qTest, Zephyr Scale, PractiTest, Azure DevOps Test Plans | — |
 | CI / automation reports | — | — | Jenkins, GitHub Actions, GitLab CI, Allure, ReportPortal |
 
 **What “verified end-to-end against mocks” means:** each adapter was built against the tool’s public API docs and tested through the full pipeline — mock server, backend, HTTP routing, and dashboard rendering. Jira and TestLink also went through live-account verification.
+
+The mock servers used for that original verification are not part of this repository. What is in the repository, and runs in CI, is a contract test per HTTP adapter in `backend/tests/`: a hand-written response in the shape the tool's API docs describe goes in, and the test checks that a valid normalised object with the right field mapping comes out. These tests prove the mapping logic. They do not prove that a live API still returns that shape; only a run against a real account does that.
 
 CI sources currently have no backend route or adapter yet, and no dashboard page reads `CI_SOURCE`.
 
@@ -184,13 +190,24 @@ Both tools are optional — the dashboard runs entirely on mock data out of the 
 
 ## Known limitations
 
-- Non-Jira/TestLink adapters are verified against mocked APIs, not live accounts for every service.
+- Only Jira, TestLink and Kiwi TCMS have been run against real instances. The other adapters are verified against mocked APIs, not live accounts.
+- Test cases have no sprint field in any supported tool. Charts that show test cases by sprint split the execution date range into equal slices, one per sprint, so they are approximate. Those charts say so in the UI. Defect charts use each ticket's real sprint.
+- A ticket counts as covered only if it links to a test case that exists in the connected test-case source.
+- Every dashboard load re-fetches everything from the upstream tools. There is no caching.
 - Azure DevOps, GitHub Issues, and Linear adapters default to public SaaS endpoints but can accept a base URL override for server/enterprise versions.
 - Jira issue types beyond common ones such as Bug, Story, Task, Improvement, and Epic may collapse into Task.
 - Some test case systems may show tester names as IDs if the source API does not provide enough user metadata.
 - Suite and automation flags may be inferred from labels, tags, or custom fields depending on the source.
 - Field mapping for priority, status, and issue type may need tuning for custom workflows.
-- No CI pipeline yet. A frontend smoke suite covers data loading, filter behavior, and the header — run with `npm test`.
+
+## Tests
+
+```bash
+npm test                 # frontend: dashboard smoke tests + unit tests for src/metrics.js (vitest)
+cd backend && npm test   # backend: adapter contract tests + HTTP/pagination helpers (node:test)
+```
+
+Both run on every push in GitHub Actions (`.github/workflows/tests.yml`). Neither needs credentials or network access.
 
 ## Tech stack
 

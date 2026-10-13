@@ -6,6 +6,9 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./tests/setup.js"],
+    // Frontend tests only. backend/tests/ uses node:test and is run from
+    // backend/ with `npm test`.
+    include: ["tests/**/*.test.{js,jsx}"],
     // The default "forks" pool spawns child processes via child_process.fork,
     // which hangs/times out under process-spawn restrictions (e.g. sandboxed
     // CI runners). "threads" runs tests in-process via worker_threads instead

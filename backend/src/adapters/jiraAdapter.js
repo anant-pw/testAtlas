@@ -31,8 +31,17 @@ function mapPriority(name) {
   return PRIORITY_MAP[(name || "").toLowerCase()] || "Medium";
 }
 
-function mapStatus(name) {
+// Workflow status names are free text per Jira instance ("Won't Do",
+// "Rejected", "QA Sign-off", ...), so matching on the name alone files every
+// unrecognised one under Open and inflates the open-defect count. Jira also
+// gives every status a fixed category (new / indeterminate / done) that
+// admins cannot rename - use that when present, and fall back to the name
+// only for responses that carry no category.
+function mapStatus(name, categoryKey) {
   const n = (name || "").toLowerCase();
+  if (categoryKey === "done") return n.includes("resolved") ? "Resolved" : "Closed";
+  if (categoryKey === "indeterminate") return "In Progress";
+  if (categoryKey === "new") return "Open";
   if (n.includes("progress") || n.includes("review")) return "In Progress";
   if (n.includes("closed") || n.includes("done")) return "Closed";
   if (n.includes("resolved")) return "Resolved";
@@ -107,7 +116,7 @@ function mapIssue(issue, cfg) {
     summary: f.summary || "",
     type: mapIssueType(f.issuetype?.name),
     priority: mapPriority(f.priority?.name),
-    status: mapStatus(f.status?.name),
+    status: mapStatus(f.status?.name, f.status?.statusCategory?.key),
     assignee: f.assignee?.displayName || "Unassigned",
     created_by: f.reporter?.displayName || "Unknown",
     sprint: extractSprint(cfg.sprintField ? f[cfg.sprintField] : null) || extractSprintFromLabels(f.labels),
